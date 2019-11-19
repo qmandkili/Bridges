@@ -27,7 +27,7 @@ using namespace std;
 
     public:
 
-        Edge(int v, int u) : v(v), u(u), weight(0), w(0), used(false), updated(false) {}
+        Edge(int v, int u) : v(v), u(u), weight(0), w(0), used(false), updated(false), basic(false) {}
 
         int getVIndex() {
             return v;
@@ -76,10 +76,6 @@ using namespace std;
         void setUpdated(bool updated) {
             this->updated = updated;
         }
-        /*bool operator > (Edge & edge) const
-        {
-            return (w > edge.w);
-        }*/
     };
 
 // Radix sort comparator for 32-bit two's complement integers
@@ -135,6 +131,7 @@ void bucketSort(vector<Edge*> &arr, int n, long long maxValue) {
     for (int i=0; i<arr.size(); i++)
     {
         Edge* edge = arr[i];
+        //TODO: исправить ошибку в подсчете индексов корзин (мб она пофиксилась правильной работой std сортировки???)
         int bi = (n-1)*edge->getW() / maxValue; // Index in bucket
         b[bi].push_back(arr[i]);
     }
@@ -150,17 +147,15 @@ void bucketSort(vector<Edge*> &arr, int n, long long maxValue) {
             arr[index++] = b[i][j];
 }
 
-void updateWeights(int cur, vector<vector<int>> &adj);
+void updateWeights(int cur);
 
 long long MAX_LONG_LONG = LLONG_MAX;
 static bitset<64> MIN_VALUE;
 
-    //static const int n = 1000;
     static vector<int> parents;
 
-    static vector<bool> leaves;
     vector<int> colors;
-    static vector<vector<Edge *>> edges;
+    vector<int> clusters;
     vector<vector<int>> adj;
 
     vector<int> enter;
@@ -169,58 +164,67 @@ static bitset<64> MIN_VALUE;
     map<string, Edge *> edgesMap;
 
     static int curTime = 0;
-    vector<Edge *> oneBridges;
+    vector<Edge *> oneDetBridges;
+    vector<Edge *> oneDfsBridges;
 
 
 
-    long long getRandomW() {
-        return rand() % LLONG_MAX;
-    }
-
-Edge * getEdge(int v, int u) {
-    map<string, Edge *>::iterator it;
-    string key;
-    if (v < u) {
-        key = to_string(v) + "_" + to_string(u);
-    } else {
-        key = to_string(u) + "_" + to_string(v);
-    }
-    it = edgesMap.find(key);
-    return it->second;
+long long getRandomW() {
+    return rand() % LLONG_MAX;
 }
 
-void dfs(int cur, vector<vector<int>> &adj, vector<bool> &was, int &count, vector<int> &color) {
+string getKey(int v, int u) {
+    return v < u ? to_string(v) + "_" + to_string(u) : to_string(u) + "_" + to_string(v);
+}
+
+Edge * getEdge(int v, int u) {
+    return edgesMap.find(getKey(v, u))->second;
+}
+
+void detDfs(int cur) {
     curTime++;
     enter[cur] = curTime;
     ret[cur] = curTime;
-    if (color[cur] != 0) {
+    if (colors[cur] != 0) {
         return;
     }
-    was[cur] = true;
-    color[cur] = 1;
-    count++;
+    colors[cur] = 1;
     for (int i = 0; i < adj[cur].size(); i++)  {
-        if (color[adj[cur][i]] == 0) {
+        if (colors[adj[cur][i]] == 0) {
             parents[adj[cur][i]] = cur;
-            dfs(adj[cur][i], adj, was, count, color);
+            detDfs(adj[cur][i]);
             ret[cur] = min(ret[cur], ret[adj[cur][i]]);
             if (ret[adj[cur][i]] > enter[cur]) {
                 Edge* edge = getEdge(cur, adj[cur][i]);
-                oneBridges.push_back(edge);
+                oneDetBridges.push_back(edge);
             }
-        } else if (parents[cur] != adj[cur][i] && color[adj[cur][i]] == 1) {
+        } else if (parents[cur] != adj[cur][i] && colors[adj[cur][i]] == 1) {
             ret[cur] = min(ret[cur], enter[adj[cur][i]]);
         }
     }
-    //TODO: добавить обновление флага updated (и used???) на все ребра, по которым не переходили из данной вершины ???????
-    color[cur] = 2;
-    updateWeights(cur, adj);
+    colors[cur] = 2;
 }
 
-void updateWeights(int cur, vector<vector<int>> &adj) {
+void dfs(int cur) {
+    if (colors[cur] != 0) {
+        return;
+    }
+    colors[cur] = 1;
+    for (int i = 0; i < adj[cur].size(); i++)  {
+        if (colors[adj[cur][i]] == 0) {
+            parents[adj[cur][i]] = cur;
+            dfs(adj[cur][i]);
+        }
+    }
+    colors[cur] = 2;
+    updateWeights(cur);
+}
+
+void updateWeights(int cur) {
     if (adj[cur].size() < 2) {
         Edge* edge = getEdge(cur, adj[cur][0]);
         edge->setUpdated(true);
+        edge->setBasic(true);
         edge->setW(0);
     } else if (adj[cur].size() == 2) {
         Edge *edge1 = getEdge(cur, adj[cur][0]);
@@ -228,9 +232,11 @@ void updateWeights(int cur, vector<vector<int>> &adj) {
         if (edge1->isUpdated()) {
             edge2->setW(edge1->getW());
             edge2->setUpdated(true);
+            edge2->setBasic(true);
         } else if (edge2->isUpdated()) {
             edge1->setW(edge2->getW());
             edge1->setUpdated(true);
+            edge1->setBasic(true);
         } else if (!(edge1->isUpdated() && edge2->isUpdated())) {
             long long tmpW = getRandomW();
             edge1->setW(tmpW);
@@ -256,16 +262,74 @@ void updateWeights(int cur, vector<vector<int>> &adj) {
         if (parentEdge) {
             parentEdge->setW(tmpW);
             parentEdge->setUpdated(true);
+            parentEdge->setBasic(true);
         }
     }
 }
 
-int getCount(int start, vector<vector<int>> &adj, vector<int> &color) {
-        vector<bool> was(adj.size(), false);
-        int count = 0;
-        dfs(start, adj, was, count, color);
-        return count;
+bool isDetDfsEqualToDfs(vector<Edge*> &detDfs, vector<Edge*> &dfs) {
+    if (detDfs.size() != dfs.size()) {
+        return false;
+    } else if (detDfs.empty() && detDfs.empty()) {
+        return true;
+    } else {
+        bool isEqual = false;
+          for (int i = 0; i < detDfs.size(); i++) {
+              bool contains = false;
+              for (int j = 0; j < dfs.size(); j++) {
+                  if (detDfs[i] == dfs[j]) {
+                      contains = true;
+                      break;
+                  }
+              }
+              if (contains) {
+                  isEqual = true;
+              } else break;
+          }
+          return isEqual;
     }
+}
+
+void checkClusters(int cur, int clusterIndex) {
+    if (adj[cur].size() == 0) {
+        return;
+    }
+    if (colors[cur] != 0) {
+        return;
+    }
+    clusters[cur] = clusterIndex;
+    colors[cur] = 1;
+    for (int i = 0; i < adj[cur].size(); i++)  {
+        if (colors[adj[cur][i]] == 0) {
+            checkClusters(adj[cur][i], clusterIndex);
+        }
+    }
+    colors[cur] = 2;
+}
+
+bool isEdgeBridge(int cur, int clusterIndex, int u) {
+    checkClusters(cur, clusterIndex);
+    return clusters[u] != clusterIndex ? true : false;
+}
+
+void removeFromAdj(int index, int removeIndex) {
+    for (int i = 0; i < adj[index].size(); i++) {
+        if (adj[index][i] == removeIndex) {
+            adj[index].erase(adj[index].begin() + i);
+            return;
+        }
+    }
+}
+
+void removeOneBridge(int v, int u) {
+    removeFromAdj(v, u);
+    removeFromAdj(u, v);
+}
+
+void addRemovedOneBridge(int v, int u) {
+    adj[v].push_back(u);
+    adj[u].push_back(v);
+}
 
 void generateGraph(int n, int probability) {
     for(int i = 0; i < n; i++){
@@ -285,77 +349,201 @@ void generateGraph(int n, int probability) {
 
 void initModel(int n) {
     parents = vector<int>(n, 0);
-    leaves = vector<bool>(n, false);
     colors = vector<int>(n, 0);
-    edges = vector<vector<Edge *>>(n, vector<Edge *>());
+    clusters = vector<int>(n, -1);
     adj = vector<vector<int>>(n, vector<int>());
-    oneBridges = vector<Edge*>();
+    oneDetBridges = vector<Edge*>();
+    oneDfsBridges = vector<Edge*>();
 
     enter = vector<int>(n, 0);
     ret = vector<int>(n, 0);
 }
 
+void resetModel(int n) {
+    parents = vector<int>(n, 0);
+    colors = vector<int>(n, 0);
+    clusters = vector<int>(n, -1);
+}
 
+void resetOneBridges() {
+    oneDetBridges = vector<Edge*>();
+    oneDfsBridges = vector<Edge*>();
+}
 
-/*void reverse(int index) {
-    if (edges[index].size() < 2) {
-        return;
-    }
-    if (edges[index].size() == 2) {
-        updateWeightForTwoAdjacentEdges(index);
-        reverse(parents[index]);
-    }
-}*/
+void initTestGraph1(bool isDetDfs);
 
-/*void updateWeightForTwoAdjacentEdges(int index) {
-    Edge edge1 = edges[index][0];
-    Edge edge2 = edges[index][1];
-    string key1 = to_string(edge1.getVIndex()) + "_" + to_string(edge1.getUIndex());
-    string key2 = to_string(edge2.getVIndex()) + "_" + to_string(edge2.getUIndex());
-    map<string,Edge>::iterator it1;
-    it1 = edgesMap.find(key1);
-    map<string,Edge>::iterator it2;
-    it2 = edgesMap.find(key2);
-    if (it1->second.isUsed()) {
-        it1->second.setWeight(MAX_LONG_LONG - it2->second.getWeight());
-    } else {
-        it2->second.setWeight(MAX_LONG_LONG - it1->second.getWeight());
-    }
-}*/
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n);
+
+double getDetDfsTime(int startIndex);
+
+double getDfsTime(int startIndex);
+
+double getStdSortTime(vector<Edge *> &v);
+
+double getBucketSortTime(vector<Edge *> &v, int n, long long maxValue);
 
 int main() {
     srand(time(NULL));
     const int start = 0;
 
-    //int data[] = { 170, 45, 75, -90, -802, 24, 2, 66 };
-
-    //std::copy(data, data + 8, std::ostream_iterator<int>(std::cout, " "));
-
-    int n_vertices = 11;
-    for (int n = 8; n < n_vertices; n+=10) {
+    int n_vertices = 101;
+    for (int n = 10; n < n_vertices; n+=10) {
+        edgesMap.clear();
         initModel(n);
+        resetOneBridges();
 
-        adj[0].push_back(2);
-        adj[0].push_back(4);
-        adj[0].push_back(6);
-        adj[0].push_back(7);
-        adj[1].push_back(2);
-        adj[1].push_back(3);
-        adj[1].push_back(7);
-        adj[2].push_back(0);
-        adj[2].push_back(1);
-        adj[2].push_back(5);
-        adj[3].push_back(1);
-        adj[3].push_back(4);
-        adj[4].push_back(0);
-        adj[4].push_back(3);
-        adj[5].push_back(2);
-        adj[5].push_back(7);
-        adj[6].push_back(0);
-        adj[7].push_back(0);
-        adj[7].push_back(1);
-        adj[7].push_back(5);
+        int probability = 20;
+        generateGraph(n, probability);
 
+        double detDfsTime = getDetDfsTime(start);
+
+        resetModel(n);
+        double dfsTime = getDfsTime(start);
+
+        vector<Edge *> v_std;
+        vector<Edge *> v_radix;
+        vector<Edge *> v_bucket;
+
+        int count = 0;
+        for(map<string, Edge *>::iterator it = edgesMap.begin(); it != edgesMap.end(); ++it ) {
+            count++;
+            if (it->second->isUpdated()) {
+                v_std.push_back( it->second );
+                //v_radix.push_back( it->second );
+                v_bucket.push_back( it->second );
+                if (it->second->getW() == 0 && it->second->isBasic()) {
+                    oneDfsBridges.push_back( it->second );
+                }
+            }
+        }
+        //int v_bucket_size = v_bucket.size();
+        //cout << "v_size: : " << v_bucket_size << endl;
+        cout << "count: : " << count << endl;
+
+        double stdSortTime = getStdSortTime(v_std);
+        double bucketSortTime = getBucketSortTime(v_bucket, n, v_std[v_std.size() - 1]->getW());
+
+        bool isEqual = isDetDfsEqualToDfs(oneDfsBridges, oneDfsBridges);
+
+        vector<Edge *> oneBridges = vector<Edge *>();
+        resetModel(n);
+        for (Edge* oneEdge : oneDfsBridges) {
+            removeOneBridge(oneEdge->getVIndex(), oneEdge->getUIndex());
+            bool isBridge = isEdgeBridge(oneEdge->getVIndex(), oneEdge->getVIndex(), oneEdge->getUIndex());
+            if (isBridge) {
+                oneBridges.push_back(oneEdge);
+            }
+            resetModel(n);
+            addRemovedOneBridge(oneEdge->getVIndex(), oneEdge->getUIndex());
+        }
+
+        bool twoBridgesFound = false;
+        for (int i = 1; i < v_std.size(); i++) {
+            Edge* edge1 = v_std[i - 1];
+            Edge* edge2 = v_std[i];
+            if (edge1->getW() == edge2->getW()) {
+                removeOneBridge(edge1->getVIndex(), edge1->getUIndex());
+                removeOneBridge(edge2->getVIndex(), edge2->getUIndex());
+
+                bool firstEdgeCheck = isEdgeBridge(edge1->getVIndex(), edge1->getVIndex(), edge2->getUIndex());
+                resetModel(n);
+                bool secondEdgeCheck = isEdgeBridge(edge2->getVIndex(), edge2->getVIndex(), edge1->getUIndex());
+                resetModel(n);
+
+                addRemovedOneBridge(edge1->getVIndex(), edge1->getUIndex());
+                addRemovedOneBridge(edge2->getVIndex(), edge2->getUIndex());
+                if (firstEdgeCheck && secondEdgeCheck) {
+                    twoBridgesFound = true;
+                    break;
+                }
+            }
+        }
+
+        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n);
+    }
+
+return 0;
+}
+
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n) {
+    ofstream myfile;
+    myfile.open ("example.csv", std::ios_base::app);
+    myfile << detDfsTime << ";" <<
+           dfsTime << ";" <<
+           stdSortTime << ";" <<
+           bucketSortTime << ";" <<
+           //radixSortTime << ";" <<
+           n << "\n";
+    myfile.close();
+}
+
+double getDetDfsTime(int startIndex) {
+    double executionTime = 0;
+    auto startTime = std::chrono::system_clock::now();
+    detDfs(startIndex);
+    auto endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime-startTime;
+    executionTime = elapsed_seconds.count();
+    cout << "det_dfs_time: " << executionTime << endl;
+    return executionTime;
+}
+
+double getDfsTime(int startIndex) {
+    double executionTime = 0;
+    auto startTime = std::chrono::system_clock::now();
+    dfs(startIndex);
+    auto endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime-startTime;
+    executionTime = elapsed_seconds.count();
+    cout << "dfs_time: " << executionTime << endl;
+    return executionTime;
+}
+
+double getStdSortTime(vector<Edge *> &v) {
+    double executionTime = 0;
+    auto startTime = std::chrono::system_clock::now();
+    std::sort(v.begin(), v.end(), sortByW);
+    auto endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime-startTime;
+    executionTime = elapsed_seconds.count();
+    cout << "std::sort: " << executionTime << endl;
+    return executionTime;
+}
+
+double getBucketSortTime(vector<Edge *> &v, int n, long long maxValue) {
+    double executionTime = 0;
+    auto startTime = std::chrono::system_clock::now();
+    bucketSort(v, n + 1, maxValue);
+    auto endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime-startTime;
+    executionTime = elapsed_seconds.count();
+    cout << "bucket_sort: " << executionTime << endl;
+    return executionTime;
+}
+
+void initTestGraph1(bool isDetDfs) {
+    adj[0].push_back(2);
+    adj[0].push_back(4);
+    adj[0].push_back(6);
+    adj[0].push_back(7);
+    adj[1].push_back(2);
+    adj[1].push_back(3);
+    adj[1].push_back(7);
+    adj[2].push_back(0);
+    adj[2].push_back(1);
+    adj[2].push_back(5);
+    adj[3].push_back(1);
+    adj[3].push_back(4);
+    adj[4].push_back(0);
+    adj[4].push_back(3);
+    adj[5].push_back(2);
+    adj[5].push_back(7);
+    adj[6].push_back(0);
+    adj[7].push_back(0);
+    adj[7].push_back(1);
+    adj[7].push_back(5);
+
+    if (isDetDfs) {
         Edge edge0_2(0, 2);
         Edge edge0_4(0, 4);
         Edge edge0_6(0, 6);
@@ -377,204 +565,5 @@ int main() {
         edgesMap.insert(pair<string, Edge *>("2_5", &edge2_5));
         edgesMap.insert(pair<string, Edge *>("3_4", &edge3_4));
         edgesMap.insert(pair<string, Edge *>("5_7", &edge5_7));
-
-        int probability = 40;
-        //generateGraph(n, probability);
-
-        auto startTime = std::chrono::system_clock::now();
-        int result = getCount(start, adj, colors);
-        cout << result << endl;
-
-// Some computation here
-        auto endTime = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_seconds = endTime-startTime;
-        cout << "elapsed_seconds: " << elapsed_seconds.count() << endl;
-
-        vector<Edge *> v_std;
-        vector<Edge *> v_radix;
-        vector<Edge *> v_bucket;
-
-// populate map somehow
-//std::map<char,int>::iterator it;
-        int count = 0;
-        for(map<string, Edge *>::iterator it = edgesMap.begin(); it != edgesMap.end(); ++it ) {
-            count++;
-            if (it->second->isUpdated()) {
-                v_std.push_back( it->second );
-                //v_radix.push_back( it->second );
-                v_bucket.push_back( it->second );
-            }
-        }
-        int v_bucket_size = v_bucket.size();
-        cout << "v_size: : " << v_bucket_size << endl;
-        cout << "count: : " << count << endl;
-
-
-//std::sort(v.begin(), v.end(), greater<Edge *>());
-        auto startTimeStdSort = std::chrono::system_clock::now();
-        std::sort(v_std.begin(), v_std.end(), sortByW);
-        auto endTimeStdSort = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_seconds_std_sort = endTimeStdSort-startTimeStdSort;
-        cout << "std::sort: " << elapsed_seconds_std_sort.count() << endl;
-
-        /*startTime = std::chrono::system_clock::now();
-        lsd_radix_sort(v_radix);
-        endTime = std::chrono::system_clock::now();
-        elapsed_seconds = endTime-startTime;
-        cout << "lsd_radix_sort: " << elapsed_seconds.count() << endl;
-        vector<Edge *> radix_error;
-        bool isFalse = false;
-        for (int i = 1; i < v_radix.size(); i++) {
-            if (v_radix[i - 1]->getW() > v_radix[i]->getW()) {
-                isFalse = true;
-                radix_error.push_back(v_radix[i]);
-            }
-        }*/
-
-        auto startTimeBucketSort = std::chrono::system_clock::now();
-        startTime = std::chrono::system_clock::now();
-        Edge* maxEdge = v_std[v_std.size() - 1];
-        int bucketSize = sizeof(v_bucket) / sizeof(long long);
-        bucketSort(v_bucket, n + 1, v_std[v_std.size() - 1]->getW());
-        auto endTimeBucketSort = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_seconds_bucket_sort = endTimeBucketSort-startTimeBucketSort;
-        cout << "bucketSort: " << elapsed_seconds_bucket_sort.count() << endl;
-        vector<Edge *> bucket_error;
-        bool isFalse = false;
-        for (int i = 1; i < v_bucket.size(); i++) {
-            if (v_bucket[i - 1]->getW() > v_bucket[i]->getW()) {
-                isFalse = true;
-                bucket_error.push_back(v_bucket[i]);
-            }
-        }
-
-        ofstream myfile;
-        myfile.open ("example.csv", std::ios_base::app);
-        myfile << elapsed_seconds.count() << ";" <<
-                elapsed_seconds_std_sort.count() << ";" <<
-                elapsed_seconds_bucket_sort.count() << ";" <<
-                n << "\n";
-        myfile.close();
     }
-
-
-
-
-
-    //std::chrono::duration<double> elapsed_seconds = endTime-startTime;
-    //std::time_t end_time = std::chrono::system_clock::to_time_t(endTime);
-
-    //std::cout << "finished computation at " << std::ctime(&end_time)
-    //          << "elapsed time: " << elapsed_seconds.count() << "s\n";
-
-//std::sort(v.begin(), v.end(), sortByW);
-
-return 0;
-
-    /*adj[0].push_back(2);
-    adj[0].push_back(4);
-    adj[0].push_back(6);
-    adj[0].push_back(7);
-    adj[1].push_back(2);
-    adj[1].push_back(3);
-    adj[1].push_back(7);
-    adj[2].push_back(0);
-    adj[2].push_back(1);
-    adj[2].push_back(5);
-    adj[3].push_back(1);
-    adj[3].push_back(4);
-    adj[4].push_back(0);
-    adj[4].push_back(3);
-    adj[5].push_back(2);
-    adj[5].push_back(7);
-    adj[6].push_back(0);
-    adj[7].push_back(0);
-    adj[7].push_back(1);
-    adj[7].push_back(5);
-
-    Edge edge0_2(0, 2);
-    Edge edge0_4(0, 4);
-    Edge edge0_6(0, 6);
-    Edge edge0_7(0, 7);
-    Edge edge1_2(1, 2);
-    Edge edge1_3(1, 3);
-    Edge edge1_7(1, 7);
-    Edge edge2_5(2, 5);
-    Edge edge3_4(3, 4);
-    Edge edge5_7(5, 7);
-
-    edgesMap.insert(pair<string, Edge *>("0_2", &edge0_2));
-    edgesMap.insert(pair<string, Edge *>("0_4", &edge0_4));
-    edgesMap.insert(pair<string, Edge *>("0_6", &edge0_6));
-    edgesMap.insert(pair<string, Edge *>("0_7", &edge0_7));
-    edgesMap.insert(pair<string, Edge *>("1_2", &edge1_2));
-    edgesMap.insert(pair<string, Edge *>("1_3", &edge1_3));
-    edgesMap.insert(pair<string, Edge *>("1_7", &edge1_7));
-    edgesMap.insert(pair<string, Edge *>("2_5", &edge2_5));
-    edgesMap.insert(pair<string, Edge *>("3_4", &edge3_4));
-    edgesMap.insert(pair<string, Edge *>("5_7", &edge5_7));*/
-
-    /*Edge edge0_3(0, 3);
-    Edge edge1_0(1, 0);
-    Edge edge1_2(1, 2);
-    Edge edge2_3(2, 3);
-    Edge edge3_1(3, 1);
-    edges[0].push_back(&edge0_3);
-    edges[0].push_back(&edge1_0);
-    edges[1].push_back(&edge1_0);
-    edges[1].push_back(&edge1_2);
-    edges[1].push_back(&edge3_1);
-    edges[2].push_back(&edge2_3);
-    edges[2].push_back(&edge1_2);
-    edges[3].push_back(&edge3_1);
-    edges[3].push_back(&edge0_3);
-    edges[3].push_back(&edge2_3);
-
-    Edge edge0_1(0, 1);
-    Edge edge1_3(1, 3);
-
-    edgesMap.insert(pair<string, Edge *>("0_3", &edge0_3));
-    edgesMap.insert(pair<string, Edge *>("0_1", &edge0_1));
-    edgesMap.insert(pair<string, Edge *>("1_2", &edge1_2));
-    edgesMap.insert(pair<string, Edge *>("2_3", &edge2_3));
-    edgesMap.insert(pair<string, Edge *>("1_3", &edge1_3));*/
-
-
-    //Edge* tmpEdge = getEdge(0, 1);
-
-    //it = edgesMap.begin();
-    /*
-    edgesMap.insert(pair<string, Bridge::Edge>("0_3", edge0_3));
-    edgesMap.insert(pair<string, Bridge::Edge>("1_0", edge1_0));
-    edgesMap.insert(pair<string, Bridge::Edge>("1_2", edge1_2));
-    edgesMap.insert(pair<string, Bridge::Edge>("2_3", edge2_3));
-    edgesMap.insert(pair<string, Bridge::Edge>("3_1", edge3_1));
-     */
-
-    /*Edge *tmp = edges[2][0];
-    cout << tmp->getVIndex() + "_" + tmp->getUIndex() << endl;
-    cout << tmp->getWeight().to_ullong() << endl;*/
-
-    //cout << isUsed[0] << endl;
-
-    /*Edge edge5_6(5, 6);
-    map<string, Edge *> tmpMap;
-    tmpMap.insert(pair<string, Edge *>("5_6", &edge5_6));
-
-    vector<Edge *> tmpEdges;
-    tmpEdges.push_back(&edge5_6);
-    Edge *tmpEdge = tmpEdges[0];
-    tmpEdge->setUsed(true);
-
-    bitset<4> tmp1(string("1110"));
-    bitset<4> tmp2(string("0000"));
-    //cout << (tmp1 ^ tmp2) << endl;
-
-    long long t1 = 4;
-    long long t2 = 1;
-    //cout << (MAX_LONG_LONG ^ (MAX_LONG_LONG + 1)) << endl;
-
-    //cout << random_bitset<64>( 0.25) << endl;
-    bitset<64> testBitSet = random_bitset<64>(0.25);
-    cout << testBitSet.to_ullong() << endl;*/
 };
