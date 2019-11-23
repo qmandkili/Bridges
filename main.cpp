@@ -132,7 +132,13 @@ void bucketSort(vector<Edge*> &arr, int n, long long maxValue) {
     {
         Edge* edge = arr[i];
         //TODO: исправить ошибку в подсчете индексов корзин (мб она пофиксилась правильной работой std сортировки???)
-        int bi = (n-1)*edge->getW() / maxValue; // Index in bucket
+        int bi = (n-1)*edge->getW(); // Index in bucket
+        if (maxValue != 0) {
+            bi = bi/maxValue;
+        }
+        if (bi < 0) {
+            bi = 0;
+        }
         b[bi].push_back(arr[i]);
     }
 
@@ -221,7 +227,10 @@ void dfs(int cur) {
 }
 
 void updateWeights(int cur) {
-    if (adj[cur].size() < 2) {
+    if (adj[cur].size() < 1) {
+        return;
+    }
+    if (adj[cur].size() == 1) {
         Edge* edge = getEdge(cur, adj[cur][0]);
         edge->setUpdated(true);
         edge->setBasic(true);
@@ -372,7 +381,7 @@ void resetOneBridges() {
 
 void initTestGraph1(bool isDetDfs);
 
-void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n);
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n, int all_n, int prob);
 
 void writeEdgesToFile(int n);
 
@@ -465,15 +474,15 @@ int main() {
 
         writeEdgesToFile(n);
         writeBasicEdgesToFile(n);
-        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n);
+        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n, n_vertices, probability);
     }
 
 return 0;
 }
 
-void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n) {
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n, int all_n, int prob) {
     ofstream myfile;
-    myfile.open ("example.csv", std::ios_base::app);
+    myfile.open ("result" + to_string(all_n) + "_" + to_string(prob) + ".csv", std::ios_base::app);
     myfile << detDfsTime << ";" <<
            dfsTime << ";" <<
            stdSortTime << ";" <<
