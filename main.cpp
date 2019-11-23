@@ -374,6 +374,10 @@ void initTestGraph1(bool isDetDfs);
 
 void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n);
 
+void writeEdgesToFile(int n);
+
+void writeBasicEdgesToFile(int n);
+
 double getDetDfsTime(int startIndex);
 
 double getDfsTime(int startIndex);
@@ -459,6 +463,8 @@ int main() {
             }
         }
 
+        writeEdgesToFile(n);
+        writeBasicEdgesToFile(n);
         writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n);
     }
 
@@ -474,6 +480,26 @@ void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, doub
            bucketSortTime << ";" <<
            //radixSortTime << ";" <<
            n << "\n";
+    myfile.close();
+}
+
+void writeEdgesToFile(int n) {
+    ofstream myfile;
+    myfile.open ("edges" + to_string(n) + ".csv");
+    for(map<string, Edge *>::iterator it = edgesMap.begin(); it != edgesMap.end(); ++it ) {
+        myfile << it->second->getVIndex() << ";" << it->second->getUIndex() << "\n";
+    }
+    myfile.close();
+}
+
+void writeBasicEdgesToFile(int n) {
+    ofstream myfile;
+    myfile.open ("basic_edges" + to_string(n) + ".csv");
+    for(map<string, Edge *>::iterator it = edgesMap.begin(); it != edgesMap.end(); ++it ) {
+        if (it->second->isBasic()) {
+            myfile << it->second->getVIndex() << ";" << it->second->getUIndex() << "\n";
+        }
+    }
     myfile.close();
 }
 
