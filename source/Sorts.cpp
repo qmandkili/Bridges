@@ -16,20 +16,18 @@ void bucketSort(vector<Edge *> &arr, int n, long long maxValue) {
     // 2) Put array elements in different buckets
     for (int i = 0; i < arr.size(); i++) {
         Edge *edge = arr[i];
-        //TODO: исправить ошибку в подсчете индексов корзин (мб она пофиксилась правильной работой std сортировки???)
-        int bi = (n - 1) * edge->getW(); // Index in bucket
-        if (maxValue != 0) {
-            bi = bi / maxValue;
+        double edgeW = edge->getW() / (double)maxValue;
+        // if edgeW is NaN
+        if (edgeW != edgeW){
+            edgeW = 0;
         }
-        if (bi < 0) {
-            bi = 0;
-        }
+        int bi = (n - 1) * edgeW; // Index in bucket
         b[bi].push_back(arr[i]);
     }
 
     // 3) Sort individual buckets
     for (int i = 0; i < n; i++)
-        sort(b[i].begin(), b[i].end(), sortByW);
+        std::sort(b[i].begin(), b[i].end(), sortByW);
 
     // 4) Concatenate all buckets into arr[]
     int index = 0;

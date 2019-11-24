@@ -1,6 +1,7 @@
 #pragma once
 #include "Edge.h"
 #include <vector>
+#include <algorithm>
 
 // Radix sort comparator for 32-bit two's complement integers
 class radix_sort {
@@ -8,10 +9,6 @@ class radix_sort {
 public:
     radix_sort(int offset) : bit(offset) {} // constructor
     bool operator()(Edge *edge) const; // function call operator
-
-    /*bool operator()(const pair<int,int>& p) {
-        return p.first < _median;
-    }*/
 };
 
 void bucketSort(vector<Edge *> &arr, int n, long long maxValue);
@@ -28,17 +25,3 @@ static bool sortByW(Edge *A, Edge *B) {
 //        std::stable_partition(edges.begin(), edges.end(), radix_sort(lsb));
 //    }
 //}
-
-// Most significant digit radix sort (recursive)
-/*void msd_radix_sort(Edge *first, Edge *last, int msb = 63)
-{
-    if (first != last && msb >= 0)
-    {
-        Edge *mid = std::partition(first, last, radix_sort(msb));
-        msb--; // decrement most-significant-bit
-        msd_radix_sort(first, mid, msb); // sort left partition
-        msd_radix_sort(mid, last, msb); // sort right partition
-    }
-}*/
-
-// Function to sort arr[] of size n using bucket sort

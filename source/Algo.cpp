@@ -64,11 +64,13 @@ bool isDetDfsEqualToDfs(vector<Edge *> &detDfs, vector<Edge *> &dfs) {
 }
 
 
-double getDetDfsTime(int startIndex, int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDetDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
                      vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
-    detDfs(startIndex, curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+    for (int i = 0; i < colors.size(); i++) {
+        detDfs(i, curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+    }
     auto endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime - startTime;
     executionTime = elapsed_seconds.count();
@@ -76,11 +78,13 @@ double getDetDfsTime(int startIndex, int &curTime, vector<int> &enter, vector<in
     return executionTime;
 }
 
-double getDfsTime(int startIndex, int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
                   vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
-    dfs(startIndex, colors, parents, adj, edgesMap);
+    for (int i = 0; i < colors.size(); i++) {
+        dfs(i, colors, parents, adj, edgesMap);
+    }
     auto endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime - startTime;
     executionTime = elapsed_seconds.count();

@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Edge.h"
 #include "Sorts.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -16,10 +17,10 @@ void dfs(int cur, vector<int> &colors, vector<int> &parents, vector<vector<int>>
 bool isDetDfsEqualToDfs(vector<Edge *> &detDfs, vector<Edge *> &dfs);
 
 
-double getDetDfsTime(int startIndex, int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDetDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
                      vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges);
 
-double getDfsTime(int startIndex, int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
                   vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges);
 
 double getStdSortTime(vector<Edge *> &v);

@@ -2,6 +2,7 @@
 #include <bitset>
 #include <map>
 #include <vector>
+#include <limits.h>
 
 using namespace std;
 
@@ -9,26 +10,18 @@ class Edge {
 
     int v;
     int u;
-    bitset<64> weight;
     long long w;
-    bool used;
     bool basic;
     bool updated;
 
 public:
-    Edge(int v, int u) : v(v), u(u), weight(0), w(0), used(false), updated(false), basic(false) {}
+    Edge(int v, int u) : v(v), u(u), w(0), updated(false), basic(false) {}
 
     int getVIndex();
     int getUIndex();
 
-    bitset<64> getWeight();
-    void setWeight(bitset<64> weight);
-
     long long getW();
     void setW(long long w);
-
-    bool isUsed();
-    void setUsed(bool used);
 
     bool isBasic();
 

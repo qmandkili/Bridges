@@ -7,8 +7,6 @@ using namespace std;
 
 static int curTime = 0;
 
-long long MAX_LONG_LONG = LLONG_MAX;
-
 static bitset<64> MIN_VALUE;
 static vector<int> parents;
 
@@ -31,12 +29,32 @@ void generateGraph(int n, int probability) {
                 adj[i].push_back(j);
                 adj[j].push_back(i);
                 Edge *edge = new Edge(i, j);
-                //Edge edge(i, j);
                 string key = to_string(i) + "_" + to_string(j);
                 edgesMap.insert(pair<string, Edge *>(key, edge));
             }
         }
     }
+}
+
+void generateGraph(int n, int m, int probability) {
+    vector<string> allEdges = vector<string>();
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            allEdges.push_back(to_string(i) + "_" + to_string(j));
+        }
+    }
+    auto rng = default_random_engine {};
+    shuffle(begin(allEdges), end(allEdges), rng);
+    for (int i = 0; i < m; i++) {
+        int sepIndex = allEdges[i].find("_");
+        int v = std::stoi(allEdges[i].substr(0, sepIndex));
+        int u = std::stoi(allEdges[i].substr(sepIndex + 1));
+        adj[v].push_back(u);
+        adj[u].push_back(v);
+        Edge* edge = new Edge(v, u);
+        edgesMap.insert(pair<string, Edge *>(allEdges[i], edge));
+    }
+    allEdges.clear();
 }
 
 void initModel(int n) {
@@ -59,71 +77,31 @@ void resetOneBridges() {
     oneDetBridges = vector<Edge *>();
     oneDfsBridges = vector<Edge *>();
 }
-void initTestGraph1(bool isDetDfs) {
-    adj[0].push_back(2);
-    adj[0].push_back(4);
-    adj[0].push_back(6);
-    adj[0].push_back(7);
-    adj[1].push_back(2);
-    adj[1].push_back(3);
-    adj[1].push_back(7);
-    adj[2].push_back(0);
-    adj[2].push_back(1);
-    adj[2].push_back(5);
-    adj[3].push_back(1);
-    adj[3].push_back(4);
-    adj[4].push_back(0);
-    adj[4].push_back(3);
-    adj[5].push_back(2);
-    adj[5].push_back(7);
-    adj[6].push_back(0);
-    adj[7].push_back(0);
-    adj[7].push_back(1);
-    adj[7].push_back(5);
 
-    if (isDetDfs) {
-        Edge edge0_2(0, 2);
-        Edge edge0_4(0, 4);
-        Edge edge0_6(0, 6);
-        Edge edge0_7(0, 7);
-        Edge edge1_2(1, 2);
-        Edge edge1_3(1, 3);
-        Edge edge1_7(1, 7);
-        Edge edge2_5(2, 5);
-        Edge edge3_4(3, 4);
-        Edge edge5_7(5, 7);
-
-        edgesMap.insert(pair<string, Edge *>("0_2", &edge0_2));
-        edgesMap.insert(pair<string, Edge *>("0_4", &edge0_4));
-        edgesMap.insert(pair<string, Edge *>("0_6", &edge0_6));
-        edgesMap.insert(pair<string, Edge *>("0_7", &edge0_7));
-        edgesMap.insert(pair<string, Edge *>("1_2", &edge1_2));
-        edgesMap.insert(pair<string, Edge *>("1_3", &edge1_3));
-        edgesMap.insert(pair<string, Edge *>("1_7", &edge1_7));
-        edgesMap.insert(pair<string, Edge *>("2_5", &edge2_5));
-        edgesMap.insert(pair<string, Edge *>("3_4", &edge3_4));
-        edgesMap.insert(pair<string, Edge *>("5_7", &edge5_7));
-    }
-};
-
-
-int main() {
+int main(int argc, char **argv) {
     srand(time(NULL));
     const int start = 0;
 
-    int n_vertices = 101;
-    for (int n = 10; n < n_vertices; n += 10) {
+    int n_vertices = atoi(argv[1]);
+    int probability = atoi(argv[2]);
+
+    int c = 2;
+
+    for (int n = 10; n < n_vertices + 1; n += 10) {
         edgesMap.clear();
         initModel(n);
         resetOneBridges();
 
-        int probability = 20;
+        int m = n * c;
         generateGraph(n, probability);
+        //generateGraph(n, m, probability);
 
-        double detDfsTime = getDetDfsTime(start, curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+        cout << "n: " << n << endl;
+
+        double detDfsTime = getDetDfsTime(curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
 
         resetModel(n);
-        double dfsTime = getDfsTime(start, curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+        double dfsTime = getDfsTime(curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
 
         vector<Edge *> v_std;
         vector<Edge *> v_radix;
@@ -134,21 +112,21 @@ int main() {
             count++;
             if (it->second->isUpdated()) {
                 v_std.push_back(it->second);
-                //v_radix.push_back( it->second );
+                v_radix.push_back( it->second );
                 v_bucket.push_back(it->second);
                 if (it->second->getW() == 0 && it->second->isBasic()) {
                     oneDfsBridges.push_back(it->second);
                 }
             }
         }
-        //int v_bucket_size = v_bucket.size();
-        //cout << "v_size: : " << v_bucket_size << endl;
-        cout << "count: : " << count << endl;
+        cout << "count: " << count << endl;
 
         double stdSortTime = getStdSortTime(v_std);
         double bucketSortTime = getBucketSortTime(v_bucket, n, v_std[v_std.size() - 1]->getW());
 
-        bool isEqual = isDetDfsEqualToDfs(oneDfsBridges, oneDfsBridges);
+        //bool isEqual = isDetDfsEqualToDfs(oneDfsBridges, oneDetBridges);
+
+        writeEdgesToFile2(n, probability, oneDetBridges);
 
         vector<Edge *> oneBridges = vector<Edge *>();
         resetModel(n);
@@ -162,7 +140,7 @@ int main() {
             addRemovedOneBridge(oneEdge->getVIndex(), oneEdge->getUIndex(), adj);
         }
 
-        bool twoBridgesFound = false;
+        vector<Edge *> twoBridges = vector<Edge *>();
         for (int i = 1; i < v_std.size(); i++) {
             Edge *edge1 = v_std[i - 1];
             Edge *edge2 = v_std[i];
@@ -178,15 +156,19 @@ int main() {
                 addRemovedOneBridge(edge1->getVIndex(), edge1->getUIndex(), adj);
                 addRemovedOneBridge(edge2->getVIndex(), edge2->getUIndex(), adj);
                 if (firstEdgeCheck && secondEdgeCheck) {
-                    twoBridgesFound = true;
+                    twoBridges.push_back(edge1);
+                    twoBridges.push_back(edge2);
                     break;
                 }
             }
         }
 
-        writeEdgesToFile(n, edgesMap);
-        writeBasicEdgesToFile(n, edgesMap);
-        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n, n_vertices, probability);
+        writeTwoEdgesToFile(n, probability, twoBridges);
+        writeEdgesToFile(n, probability, edgesMap);
+        writeBasicEdgesToFile(n, probability, edgesMap);
+        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n, probability);
+
+        cout << "______" << endl;
     }
 
     return 0;

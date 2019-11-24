@@ -2,6 +2,8 @@
 
 using namespace std;
 
+long long MAX_LONG_LONG = LLONG_MAX;
+
 int Edge::getVIndex() {
     return v;
 }
@@ -10,28 +12,12 @@ int Edge::getUIndex() {
     return u;
 }
 
-bitset<64> Edge::getWeight() {
-    return weight;
-}
-
-void Edge::setWeight(bitset<64> weight) {
-    this->weight = weight;
-}
-
 long long Edge::getW() {
     return w;
 }
 
 void Edge::setW(long long w) {
     this->w = w;
-}
-
-bool Edge::isUsed() {
-    return used;
-}
-
-void Edge::setUsed(bool used) {
-    this->used = used;
 }
 
 bool Edge::isBasic() {
