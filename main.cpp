@@ -15,68 +15,68 @@
 
 using namespace std;
 
-    class Edge {
+class Edge {
 
-        int v;
-        int u;
-        bitset<64> weight;
-        long long w;
-        bool used;
-        bool basic;
-        bool updated;
+    int v;
+    int u;
+    bitset<64> weight;
+    long long w;
+    bool used;
+    bool basic;
+    bool updated;
 
-    public:
+public:
 
-        Edge(int v, int u) : v(v), u(u), weight(0), w(0), used(false), updated(false), basic(false) {}
+    Edge(int v, int u) : v(v), u(u), weight(0), w(0), used(false), updated(false), basic(false) {}
 
-        int getVIndex() {
-            return v;
-        }
+    int getVIndex() {
+        return v;
+    }
 
-        int getUIndex() {
-            return u;
-        }
+    int getUIndex() {
+        return u;
+    }
 
-        bitset<64> getWeight() {
-            return weight;
-        }
+    bitset<64> getWeight() {
+        return weight;
+    }
 
-        void setWeight(bitset<64> weight) {
-            this->weight = weight;
-        }
+    void setWeight(bitset<64> weight) {
+        this->weight = weight;
+    }
 
-        long long getW() {
-            return w;
-        }
+    long long getW() {
+        return w;
+    }
 
-        void setW(long long w) {
-            this->w = w;
-        }
+    void setW(long long w) {
+        this->w = w;
+    }
 
-        bool isUsed() {
-            return used;
-        }
+    bool isUsed() {
+        return used;
+    }
 
-        void setUsed(bool used) {
-            this->used = used;
-        }
+    void setUsed(bool used) {
+        this->used = used;
+    }
 
-        bool isBasic() {
-            return basic;
-        }
+    bool isBasic() {
+        return basic;
+    }
 
-        void setBasic(bool basic) {
-            this->basic = basic;
-        }
+    void setBasic(bool basic) {
+        this->basic = basic;
+    }
 
-        bool isUpdated() {
-            return updated;
-        }
+    bool isUpdated() {
+        return updated;
+    }
 
-        void setUpdated(bool updated) {
-            this->updated = updated;
-        }
-    };
+    void setUpdated(bool updated) {
+        this->updated = updated;
+    }
+};
 
 // Radix sort comparator for 32-bit two's complement integers
 class radix_sort
@@ -158,20 +158,20 @@ void updateWeights(int cur);
 long long MAX_LONG_LONG = LLONG_MAX;
 static bitset<64> MIN_VALUE;
 
-    static vector<int> parents;
+static vector<int> parents;
 
-    vector<int> colors;
-    vector<int> clusters;
-    vector<vector<int>> adj;
+vector<int> colors;
+vector<int> clusters;
+vector<vector<int>> adj;
 
-    vector<int> enter;
-    vector<int> ret;
+vector<int> enter;
+vector<int> ret;
 
-    map<string, Edge *> edgesMap;
+map<string, Edge *> edgesMap;
 
-    static int curTime = 0;
-    vector<Edge *> oneDetBridges;
-    vector<Edge *> oneDfsBridges;
+static int curTime = 0;
+vector<Edge *> oneDetBridges;
+vector<Edge *> oneDfsBridges;
 
 
 
@@ -283,19 +283,19 @@ bool isDetDfsEqualToDfs(vector<Edge*> &detDfs, vector<Edge*> &dfs) {
         return true;
     } else {
         bool isEqual = false;
-          for (int i = 0; i < detDfs.size(); i++) {
-              bool contains = false;
-              for (int j = 0; j < dfs.size(); j++) {
-                  if (detDfs[i] == dfs[j]) {
-                      contains = true;
-                      break;
-                  }
-              }
-              if (contains) {
-                  isEqual = true;
-              } else break;
-          }
-          return isEqual;
+        for (int i = 0; i < detDfs.size(); i++) {
+            bool contains = false;
+            for (int j = 0; j < dfs.size(); j++) {
+                if (detDfs[i] == dfs[j]) {
+                    contains = true;
+                    break;
+                }
+            }
+            if (contains) {
+                isEqual = true;
+            } else break;
+        }
+        return isEqual;
     }
 }
 
@@ -341,10 +341,10 @@ void addRemovedOneBridge(int v, int u) {
 }
 
 void generateGraph(int n, int probability) {
-    for(int i = 0; i < n; i++){
-        for(int j = i + 1; j < n; j++){
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
             int rnd = rand() % 100 + 1;
-            if(rnd <= probability){
+            if (rnd <= probability) {
                 adj[i].push_back(j);
                 adj[j].push_back(i);
                 Edge* edge = new Edge(i, j);
@@ -354,6 +354,27 @@ void generateGraph(int n, int probability) {
             }
         }
     }
+}
+
+void generateGraph(int n, int m, int probability) {
+    vector<string> allEdges = vector<string>();
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            allEdges.push_back(to_string(i) + "_" + to_string(j));
+        }
+    }
+    auto rng = default_random_engine {};
+    shuffle(begin(allEdges), end(allEdges), rng);
+    for (int i = 0; i < m; i++) {
+        int sepIndex = allEdges[i].find("_");
+        int v = std::stoi(allEdges[i].substr(0, sepIndex));
+        int u = std::stoi(allEdges[i].substr(sepIndex + 1));
+        adj[v].push_back(u);
+        adj[u].push_back(v);
+        Edge* edge = new Edge(v, u);
+        edgesMap.insert(pair<string, Edge *>(allEdges[i], edge));
+    }
+    allEdges.clear();
 }
 
 void initModel(int n) {
@@ -399,6 +420,8 @@ int main() {
     srand(time(NULL));
     const int start = 0;
 
+    int c = 2;
+
     int n_vertices = 101;
     for (int n = 10; n < n_vertices; n+=10) {
         edgesMap.clear();
@@ -406,7 +429,9 @@ int main() {
         resetOneBridges();
 
         int probability = 20;
-        generateGraph(n, probability);
+        int m = n * c;
+        generateGraph(n, m, probability);
+        //generateGraph(n, probability);
 
         double detDfsTime = getDetDfsTime(start);
 
@@ -472,8 +497,8 @@ int main() {
             }
         }
 
-        writeEdgesToFile(n);
-        writeBasicEdgesToFile(n);
+        //writeEdgesToFile(n);
+        //writeBasicEdgesToFile(n);
         writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n, n_vertices, probability);
     }
 
@@ -515,7 +540,9 @@ void writeBasicEdgesToFile(int n) {
 double getDetDfsTime(int startIndex) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
-    detDfs(startIndex);
+    for (int i = 0; i < colors.size(); i++) {
+        detDfs(i);
+    }
     auto endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime-startTime;
     executionTime = elapsed_seconds.count();
@@ -526,7 +553,9 @@ double getDetDfsTime(int startIndex) {
 double getDfsTime(int startIndex) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
-    dfs(startIndex);
+    for (int i = 0; i < colors.size(); i++) {
+        dfs(i);
+    }
     auto endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime-startTime;
     executionTime = elapsed_seconds.count();
