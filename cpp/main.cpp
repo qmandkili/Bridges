@@ -123,6 +123,7 @@ int main(int argc, char **argv) {
 
         double stdSortTime = getStdSortTime(v_std);
         double bucketSortTime = getBucketSortTime(v_bucket, n, v_std[v_std.size() - 1]->getW());
+        double radixSortTime = getRadixSortTime(v_radix);
 
         //bool isEqual = isDetDfsEqualToDfs(oneDfsBridges, oneDetBridges);
 
@@ -166,7 +167,7 @@ int main(int argc, char **argv) {
         writeTwoEdgesToFile(n, probability, twoBridges);
         writeEdgesToFile(n, probability, edgesMap);
         writeBasicEdgesToFile(n, probability, edgesMap);
-        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, n, probability);
+        writeOutputFile(detDfsTime, dfsTime, stdSortTime, bucketSortTime, radixSortTime, n, probability);
 
         cout << "______" << endl;
     }

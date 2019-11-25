@@ -26,3 +26,5 @@ double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int
 double getStdSortTime(vector<Edge *> &v);
 
 double getBucketSortTime(vector<Edge *> &v, int n, long long maxValue);
+
+double getRadixSortTime(vector<Edge *> &v);

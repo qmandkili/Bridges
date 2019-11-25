@@ -1,7 +1,7 @@
 #include "../include/Edge.h"
 #include "../include/Sorts.h"
 
-bool radix_sort::operator()(Edge* edge) const // function call operator
+bool radix_sort::operator()(Edge *edge) const // function call operator
 {
     if (bit == 63) // sign bit
         return edge->getW() < 0; // negative int to left partition
@@ -16,9 +16,9 @@ void bucketSort(vector<Edge *> &arr, int n, long long maxValue) {
     // 2) Put array elements in different buckets
     for (int i = 0; i < arr.size(); i++) {
         Edge *edge = arr[i];
-        double edgeW = edge->getW() / (double)maxValue;
+        double edgeW = edge->getW() / (double) maxValue;
         // if edgeW is NaN
-        if (edgeW != edgeW){
+        if (edgeW != edgeW) {
             edgeW = 0;
         }
         int bi = (n - 1) * edgeW; // Index in bucket
@@ -34,4 +34,11 @@ void bucketSort(vector<Edge *> &arr, int n, long long maxValue) {
     for (int i = 0; i < n; i++)
         for (int j = 0; j < b[i].size(); j++)
             arr[index++] = b[i][j];
+}
+
+void lsd_radix_sort(vector<Edge *> edges) {
+    for (int lsb = 0; lsb < 64; ++lsb) // least-significant-bit
+    {
+        std::stable_partition(edges.begin(), edges.end(), radix_sort(lsb));
+    }
 }

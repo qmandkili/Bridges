@@ -5,7 +5,7 @@
 
 using namespace std;
 
-void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n, int prob);
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, double radixSortTime, int n, int prob);
 
 void writeEdgesToFile(int n, int prob, map<string, Edge *> &edgesMap);
 

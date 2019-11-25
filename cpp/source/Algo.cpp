@@ -103,6 +103,19 @@ double getStdSortTime(vector<Edge *> &v) {
     return executionTime;
 }
 
+double getRadixSortTime(vector<Edge *> &v) {
+    double executionTime = 0;
+    auto startTime = std::chrono::system_clock::now();
+    lsd_radix_sort(v);
+    auto endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    executionTime = elapsed_seconds.count();
+    cout << "Radix sort: " << executionTime << endl;
+    return executionTime;
+}
+
+
+
 double getBucketSortTime(vector<Edge *> &v, int n, long long maxValue) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();

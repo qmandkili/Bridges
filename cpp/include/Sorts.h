@@ -19,9 +19,4 @@ static bool sortByW(Edge *A, Edge *B) {
 
 
 // Least significant digit radix sort
-//void lsd_radix_sort(vector<Edge *> edges) {
-//    for (int lsb = 0; lsb < 64; ++lsb) // least-significant-bit
-//    {
-//        std::stable_partition(edges.begin(), edges.end(), radix_sort(lsb));
-//    }
-//}
+void lsd_radix_sort(vector<Edge *> &edges);
