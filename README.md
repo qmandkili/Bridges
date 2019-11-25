@@ -104,14 +104,6 @@ def visualize(probability, path='output/'):
 ```
 
 
-```python
-visualize(20)
-```
-
-
-![png](notebook/output_2_0.png)
-
-
 # Визуализация 1-мостов на различных графах
 
 
