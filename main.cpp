@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
         edgesMap.insert(pair<string, Edge *>("3_4", &edge3_4));
         edgesMap.insert(pair<string, Edge *>("5_7", &edge5_7));
 
-        double detDfsTime = getDetDfsTime(curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+        double detDfsTime = getDetDfsTime(curTime, enter, ret, visited, adj, parents, edgesMap, oneDetBridges);
 
         resetModel(n);
         double dfsTime = getDfsTime(curTime, enter, ret, visited, adj, parents, edgesMap, oneDetBridges);
