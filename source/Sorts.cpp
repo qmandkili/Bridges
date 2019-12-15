@@ -35,3 +35,39 @@ void bucketSort(vector<Edge *> &arr, int n, long long maxValue) {
         for (int j = 0; j < b[i].size(); j++)
             arr[index++] = b[i][j];
 }
+
+void radixSort(vector<Edge *> &arr) {
+    vector<Edge *> helper(arr.size());
+
+    int b = 64;
+    int r = 8;
+
+    vector<int> count(1 << r);
+    vector<int> pref(1 << r);
+
+    int groups = ceil(b / r);
+
+    int mask = (1 << r) - 1;
+
+    for (int c = 0, shift = 0;  c < groups; c++, shift += r) {
+
+        fill(count.begin(), count.end(), 0);
+
+        for (int i = 0; i < arr.size(); i++) {
+            count[(arr[i]->getW() >> shift) & mask]++;
+        }
+
+        pref[0] = 0;
+        for (int i = 1; i < count.size(); i++) {
+            pref[i] = pref[i - 1] + count[i -1];
+        }
+
+        for (int i = 0; i < arr.size(); i++) {
+            helper[pref[(arr[i]->getW() >> shift)&mask]++] = arr[i];
+        }
+
+        for (int i = 0; i < arr.size(); i++) {
+            arr[i] = helper[i];
+        }
+    }
+}

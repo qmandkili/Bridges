@@ -6,13 +6,14 @@
 #include "Edge.h"
 #include "Sorts.h"
 #include <algorithm>
+#include <stack>
 
 using namespace std;
 
 void detDfs(int cur, int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
             vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges);
 
-void dfs(int cur, vector<int> &colors, vector<int> &parents, vector<vector<int>> &adj, map<string, Edge *> &edgesMap);
+void dfs(int cur, vector<bool> &visited, vector<int> &parents, vector<vector<int>> &adj, map<string, Edge *> &edgesMap);
 
 bool isDetDfsEqualToDfs(vector<Edge *> &detDfs, vector<Edge *> &dfs);
 
@@ -20,7 +21,7 @@ bool isDetDfsEqualToDfs(vector<Edge *> &detDfs, vector<Edge *> &dfs);
 double getDetDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
                      vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges);
 
-double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<bool> &visited, vector<vector<int>> &adj,
                   vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges);
 
 double getStdSortTime(vector<Edge *> &v);
