@@ -1,8 +1,56 @@
 #include "../include/Algo.h"
 
-void detDfs(int cur, int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+void detDfs(int cur, int &curTime, vector<int> &enter, vector<int> &ret, vector<bool> &visited, vector<vector<int>> &adj,
             vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges) {
-    curTime++;
+    stack<int> stack;
+    stack.push(cur);
+    visited[cur] = true;
+    curTime = 0;
+    enter[cur] = curTime;
+    ret[cur] = curTime;
+    while (!stack.empty()) {
+        int node = stack.top();
+
+        bool isAllVisited = true;
+        for (int i = 0; i < adj[node].size(); ++i) {
+            if (!visited[adj[node][i]]) {
+                stack.push(adj[node][i]);
+                parents[adj[node][i]] = node;
+                visited[adj[node][i]] = true;
+                curTime++;
+                enter[adj[node][i]] = curTime;
+                ret[adj[node][i]] = curTime;
+                isAllVisited = false;
+                break;
+            } else if (visited[adj[node][i]] && parents[node] != adj[node][i] && parents[adj[node][i]] != node) {
+                ret[node] = min(ret[node], enter[adj[node][i]]);
+            }
+        }
+        /*
+        for всех u смежных с v
+          if (v, u) — обратное ребро
+            ret[v] = min(ret[v], enter[u])
+          if вершина u — белая
+            dfs(u)
+            ret[v] = min(ret[v], ret[u])
+            if ret[u] > enter[v]
+              ребро (v, u) — мост
+        */
+        if (isAllVisited) {
+            stack.pop();
+            if (!stack.empty()) {
+                ret[stack.top()] = min(ret[stack.top()], ret[node]);
+                if (ret[node] > enter[stack.top()]) {
+                    Edge *edge = getEdge(stack.top(), node, edgesMap);
+                    oneDetBridges.push_back(edge);
+                }
+            }
+            //updateWeights(node, adj, edgesMap, parents);
+            //stack.pop();
+        }
+    }
+
+    /*curTime++;
     enter[cur] = curTime;
     ret[cur] = curTime;
     if (colors[cur] != 0) {
@@ -19,14 +67,40 @@ void detDfs(int cur, int &curTime, vector<int> &enter, vector<int> &ret, vector<
                 oneDetBridges.push_back(edge);
             }
         } else if (parents[cur] != adj[cur][i] && colors[adj[cur][i]] == 1) {
-            ret[cur] = min(ret[cur], enter[adj[cur][i]]);
-        }
+        ret[cur] = min(ret[cur], enter[adj[cur][i]]);
     }
-    colors[cur] = 2;
+}
+colors[cur] = 2;
+     */
 }
 
-void dfs(int cur, vector<int> &colors, vector<int> &parents, vector<vector<int>> &adj, map<string, Edge *> &edgesMap) {
-    if (colors[cur] != 0) {
+void dfs(int cur, vector<bool> &visited, vector<int> &parents, vector<vector<int>> &adj, map<string, Edge *> &edgesMap) {
+    stack<int> stack;
+    stack.push(cur);
+    visited[cur] = true;
+    while (!stack.empty()) {
+        int node = stack.top();
+
+        bool isAllVisited = true;
+        for (int i = 0; i < adj[node].size(); ++i) {
+            if (!visited[adj[node][i]]) {
+                stack.push(adj[node][i]);
+                parents[adj[node][i]] = node;
+                visited[adj[node][i]] = true;
+                isAllVisited = false;
+                break;
+            }
+        }
+        if (isAllVisited) {
+            stack.pop();
+            /*if (!stack.empty()) {
+                parents[node] = stack.top();
+            }*/
+            updateWeights(node, adj, edgesMap, parents);
+            //stack.pop();
+        }
+    }
+    /*if (colors[cur] != 0) {
         return;
     }
     colors[cur] = 1;
@@ -37,7 +111,7 @@ void dfs(int cur, vector<int> &colors, vector<int> &parents, vector<vector<int>>
         }
     }
     colors[cur] = 2;
-    updateWeights(cur, adj, edgesMap, parents);
+    updateWeights(cur, adj, edgesMap, parents);*/
 }
 
 bool isDetDfsEqualToDfs(vector<Edge *> &detDfs, vector<Edge *> &dfs) {
@@ -64,12 +138,12 @@ bool isDetDfsEqualToDfs(vector<Edge *> &detDfs, vector<Edge *> &dfs) {
 }
 
 
-double getDetDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDetDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<bool> &visited, vector<vector<int>> &adj,
                      vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
-    for (int i = 0; i < colors.size(); i++) {
-        detDfs(i, curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+    for (int i = 0; i < visited.size(); i++) {
+        detDfs(i, curTime, enter, ret, visited, adj, parents, edgesMap, oneDetBridges);
     }
     auto endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime - startTime;
@@ -78,12 +152,12 @@ double getDetDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<
     return executionTime;
 }
 
-double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<int> &colors, vector<vector<int>> &adj,
+double getDfsTime(int &curTime, vector<int> &enter, vector<int> &ret, vector<bool> &visited, vector<vector<int>> &adj,
                   vector<int> &parents, map<string, Edge *> &edgesMap, vector<Edge *> &oneDetBridges) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
-    for (int i = 0; i < colors.size(); i++) {
-        dfs(i, colors, parents, adj, edgesMap);
+    for (int i = 0; i < visited.size(); i++) {
+        dfs(i, visited, parents, adj, edgesMap);
     }
     auto endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime - startTime;
@@ -103,19 +177,6 @@ double getStdSortTime(vector<Edge *> &v) {
     return executionTime;
 }
 
-double getRadixSortTime(vector<Edge *> &v) {
-    double executionTime = 0;
-    auto startTime = std::chrono::system_clock::now();
-    lsd_radix_sort(v);
-    auto endTime = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
-    executionTime = elapsed_seconds.count();
-    cout << "Radix sort: " << executionTime << endl;
-    return executionTime;
-}
-
-
-
 double getBucketSortTime(vector<Edge *> &v, int n, long long maxValue) {
     double executionTime = 0;
     auto startTime = std::chrono::system_clock::now();
@@ -124,5 +185,16 @@ double getBucketSortTime(vector<Edge *> &v, int n, long long maxValue) {
     std::chrono::duration<double> elapsed_seconds = endTime - startTime;
     executionTime = elapsed_seconds.count();
     cout << "bucket_sort: " << executionTime << endl;
+    return executionTime;
+}
+
+double getRadixSortTime(vector<Edge *> &v) {
+    double executionTime = 0;
+    auto startTime = std::chrono::system_clock::now();
+    radixSort(v);
+    auto endTime = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    executionTime = elapsed_seconds.count();
+    cout << "radix_sort: " << executionTime << endl;
     return executionTime;
 }

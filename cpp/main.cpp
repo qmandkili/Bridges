@@ -11,6 +11,7 @@ static bitset<64> MIN_VALUE;
 static vector<int> parents;
 
 vector<int> colors;
+vector<bool> visited;
 vector<int> clusters;
 vector<vector<int>> adj;
 vector<int> enter;
@@ -36,30 +37,10 @@ void generateGraph(int n, int probability) {
     }
 }
 
-void generateGraph(int n, int m, int probability) {
-    vector<string> allEdges = vector<string>();
-    for (int i = 0; i < n; i++) {
-        for (int j = i + 1; j < n; j++) {
-            allEdges.push_back(to_string(i) + "_" + to_string(j));
-        }
-    }
-    auto rng = default_random_engine {};
-    shuffle(begin(allEdges), end(allEdges), rng);
-    for (int i = 0; i < m; i++) {
-        int sepIndex = allEdges[i].find("_");
-        int v = std::stoi(allEdges[i].substr(0, sepIndex));
-        int u = std::stoi(allEdges[i].substr(sepIndex + 1));
-        adj[v].push_back(u);
-        adj[u].push_back(v);
-        Edge* edge = new Edge(v, u);
-        edgesMap.insert(pair<string, Edge *>(allEdges[i], edge));
-    }
-    allEdges.clear();
-}
-
 void initModel(int n) {
     parents = vector<int>(n, 0);
     colors = vector<int>(n, 0);
+    visited = vector<bool>(n, false);
     clusters = vector<int>(n, -1);
     adj = vector<vector<int>>(n, vector<int>());
     oneDetBridges = vector<Edge *>();
@@ -71,6 +52,7 @@ void initModel(int n) {
 void resetModel(int n) {
     parents = vector<int>(n, 0);
     colors = vector<int>(n, 0);
+    visited = vector<bool>(n, false);
     clusters = vector<int>(n, -1);
 }
 void resetOneBridges() {
@@ -92,16 +74,13 @@ int main(int argc, char **argv) {
         initModel(n);
         resetOneBridges();
 
-        int m = n * c;
         generateGraph(n, probability);
-        //generateGraph(n, m, probability);
 
         cout << "n: " << n << endl;
 
-        double detDfsTime = getDetDfsTime(curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
-
+        double detDfsTime = getDetDfsTime(curTime, enter, ret, visited, adj, parents, edgesMap, oneDetBridges);
         resetModel(n);
-        double dfsTime = getDfsTime(curTime, enter, ret, colors, adj, parents, edgesMap, oneDetBridges);
+        double dfsTime = getDfsTime(curTime, enter, ret, visited, adj, parents, edgesMap, oneDetBridges);
 
         vector<Edge *> v_std;
         vector<Edge *> v_radix;
@@ -120,12 +99,10 @@ int main(int argc, char **argv) {
             }
         }
         cout << "count: " << count << endl;
-
         double stdSortTime = getStdSortTime(v_std);
-        double bucketSortTime = getBucketSortTime(v_bucket, n, v_std[v_std.size() - 1]->getW());
         double radixSortTime = getRadixSortTime(v_radix);
+        double bucketSortTime = getBucketSortTime(v_bucket, n, v_std[v_std.size() - 1]->getW());
 
-        //bool isEqual = isDetDfsEqualToDfs(oneDfsBridges, oneDetBridges);
 
         writeEdgesToFile2(n, probability, oneDetBridges);
 

@@ -1,13 +1,13 @@
 #include "../include/IO.h"
 
-void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, double radixSortTime, int n, int prob) {
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, int n, int prob) {
     ofstream myfile;
     myfile.open("result_" + to_string(prob) + ".csv", std::ios_base::app);
     myfile << detDfsTime << ";" <<
            dfsTime << ";" <<
            stdSortTime << ";" <<
            bucketSortTime << ";" <<
-           radixSortTime << ";" <<
+           //radixSortTime << ";" <<
            n << "\n";
     myfile.close();
 }
@@ -47,5 +47,17 @@ void writeEdgesToFile2(int n, int prob, vector<Edge*> vec) {
     for (auto & it : vec) {
         myfile << it->getVIndex() << ";" << it->getUIndex() << "\n";
     }
+    myfile.close();
+}
+
+void writeOutputFile(double detDfsTime, double dfsTime, double stdSortTime, double bucketSortTime, double radixSortTime, int n, int prob) {
+    ofstream myfile;
+    myfile.open("result_" + to_string(prob) + ".csv", std::ios_base::app);
+    myfile << detDfsTime << ";" <<
+           dfsTime << ";" <<
+           stdSortTime << ";" <<
+           bucketSortTime << ";" <<
+           radixSortTime << ";" <<
+           n << "\n";
     myfile.close();
 }

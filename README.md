@@ -245,7 +245,7 @@ for i in range(10, 100, 10):
 ![png](notebook/output_8_8.png)
 
 
-## Время работы, используя различные подходы
+## Время работы, используя различные подходы на небольшом количестве вершин
 
 
 ```python
@@ -271,5 +271,14 @@ visualize(40)
 ```
 
 
-![png](notebook/output_12_0.png)
+![png](notebook/output_10_0.png)
 
+
+## Время работы, используя различные подходы на большом количестве вершин
+
+
+```python
+visualize(5, 'output-large')
+```
+
+![png](notebook/output_14_0.png)
